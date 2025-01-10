@@ -9,62 +9,62 @@ st.set_page_config(page_title="RAG Chatbot", layout="wide")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Debug mode to see full API response
-DEBUG_MODE = True
-
 def query_langflow(prompt):
     """Send query to Langflow API"""
     try:
-        # Get the base URL and auth token from secrets
-        base_url = st.secrets["LANGFLOW_URL"]
-        auth_token = st.secrets["LANGFLOW_AUTH"]
+        # Constants from your API
+        base_url = "https://api.langflow.astra.datastax.com"
+        langflow_id = "34d17c26-a986-4b87-a228-81e15a1ecc86"
+        flow_id = "3774f27b-92cd-4e44-99b7-c197b469357f"
         
+        # Construct API URL exactly as shown in template
+        api_url = f"{base_url}/lf/{langflow_id}/api/v1/run/{flow_id}"
+        
+        # Headers
         headers = {
-            "Authorization": f"Bearer {auth_token}",
+            "Authorization": f"Bearer {st.secrets['LANGFLOW_AUTH']}",
             "Content-Type": "application/json"
         }
         
+        # Payload structure matching the template
         payload = {
             "input_value": prompt,
             "output_type": "chat",
-            "input_type": "chat"
+            "input_type": "chat",
+            "tweaks": {
+                "ChatInput-GttX2": {},
+                "ParseData-pfCjl": {},
+                "Prompt-oucXx": {},
+                "SplitText-NN9ME": {},
+                "OpenAIModel-dTpgs": {},
+                "ChatOutput-ZJqT4": {},
+                "AstraDB-By7mp": {},
+                "OpenAIEmbeddings-CHR7f": {},
+                "AstraDB-qMCWK": {},
+                "OpenAIEmbeddings-1b1YB": {},
+                "File-ziFHP": {}
+            }
         }
         
-        # Construct the full API URL
-        api_url = f"{base_url}/run/3774f27b-92cd-4e44-99b7-c197b469357f"
-        
-        if DEBUG_MODE:
-            st.write("Debug - API URL:", api_url)
-            st.write("Debug - Headers:", {k: v for k, v in headers.items() if k != "Authorization"})
-            st.write("Debug - Payload:", payload)
-        
-        response = requests.post(
-            api_url,
-            json=payload,
-            headers=headers
-        )
-        
-        if DEBUG_MODE:
-            st.write("Debug - Status Code:", response.status_code)
-            try:
-                st.write("Debug - Response:", response.json())
-            except:
-                st.write("Debug - Raw Response:", response.text)
+        # Make the request
+        response = requests.post(api_url, json=payload, headers=headers)
         
         if response.status_code == 200:
             result = response.json()
             return result.get('response', result.get('output', str(result)))
         else:
-            return f"Error: API returned status code {response.status_code}. Response: {response.text}"
+            error_detail = f"Status code: {response.status_code}"
+            try:
+                error_detail += f"\nResponse: {response.json()}"
+            except:
+                error_detail += f"\nResponse: {response.text}"
+            return f"Error: {error_detail}"
             
     except Exception as e:
         return f"Error: {str(e)}"
 
 # Create the main application
 st.title("RAG Chatbot")
-
-# Optional: Add a debug toggle
-DEBUG_MODE = st.sidebar.checkbox("Debug Mode", value=False)
 
 # Display chat history
 for message in st.session_state.messages:
