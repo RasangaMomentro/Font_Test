@@ -2,17 +2,36 @@ import streamlit as st
 import requests
 import json
 
-# Set page configuration
-st.set_page_config(page_title="RAG Chatbot", layout="wide")
+# Set page configuration with custom title
+st.set_page_config(
+    page_title="Fonterra Perfect Store Assistant",
+    page_icon="🏪",
+    layout="wide"
+)
 
-# Initialize session state for chat history
+# Custom CSS for styling
+st.markdown("""
+    <style>
+    .main-title {
+        text-align: center;
+        padding: 1rem 0;
+        color: #003087;  /* Fonterra blue color */
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Custom title
+st.markdown("<h1 class='main-title'>Fonterra Perfect Store Assistant</h1>", unsafe_allow_html=True)
+
+# Initialize session state for chat history and welcome message
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [
+        {"role": "assistant", "content": "Welcome to the Perfect Store AI assistant. How can I assist you today?"}
+    ]
 
 def extract_chat_response(response_data):
     """Extract the actual chat message from the nested response structure"""
     try:
-        # Navigate through the nested structure
         outputs = response_data.get('outputs', [{}])[0]
         outputs_nested = outputs.get('outputs', [{}])[0]
         results = outputs_nested.get('results', {})
@@ -78,16 +97,13 @@ def query_langflow(prompt):
     except Exception as e:
         return f"Error: {str(e)}"
 
-# Create the main application
-st.title("RAG Chatbot")
-
 # Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])  # Using markdown for better formatting
+        st.markdown(message["content"])
 
 # Chat input
-if prompt := st.chat_input("What would you like to know?"):
+if prompt := st.chat_input("What would you like to know about Perfect Store?"):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
     
