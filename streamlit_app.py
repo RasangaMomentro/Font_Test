@@ -9,6 +9,20 @@ st.set_page_config(page_title="RAG Chatbot", layout="wide")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+def extract_chat_response(response_data):
+    """Extract the actual chat message from the nested response structure"""
+    try:
+        # Navigate through the nested structure
+        outputs = response_data.get('outputs', [{}])[0]
+        outputs_nested = outputs.get('outputs', [{}])[0]
+        results = outputs_nested.get('results', {})
+        message = results.get('message', {})
+        text = message.get('data', {}).get('text', '')
+        
+        return text if text else "No response text found"
+    except Exception as e:
+        return f"Error parsing response: {str(e)}"
+
 def query_langflow(prompt):
     """Send query to Langflow API"""
     try:
@@ -51,7 +65,8 @@ def query_langflow(prompt):
         
         if response.status_code == 200:
             result = response.json()
-            return result.get('response', result.get('output', str(result)))
+            # Extract just the chat message text
+            return extract_chat_response(result)
         else:
             error_detail = f"Status code: {response.status_code}"
             try:
@@ -69,7 +84,7 @@ st.title("RAG Chatbot")
 # Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.write(message["content"])
+        st.markdown(message["content"])  # Using markdown for better formatting
 
 # Chat input
 if prompt := st.chat_input("What would you like to know?"):
@@ -78,7 +93,7 @@ if prompt := st.chat_input("What would you like to know?"):
     
     # Display user message
     with st.chat_message("user"):
-        st.write(prompt)
+        st.markdown(prompt)
     
     # Get response from Langflow
     response = query_langflow(prompt)
@@ -88,4 +103,4 @@ if prompt := st.chat_input("What would you like to know?"):
     
     # Display assistant response
     with st.chat_message("assistant"):
-        st.write(response)
+        st.markdown(response)
